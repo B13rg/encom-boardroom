@@ -518,12 +518,38 @@ function writeResponse(txt){
     $("#lt-command-lines").append("<div class='response'>&gt;&gt;encom-sh: " + txt + "</div>");
 }
 
-var currentDir = "encom_root";
+function Folder(name, parent,isfile) {
+	this.name = name;
+	this.parent = parent;
+	this.children='';
+	this.data = '';
+	this.file = isfile;
+}
+
+Folder.prototype.ls = function () {
+	var output = "";
+	for (var i = 0; i < this.children.length; i++){
+		output+=[
+			'<div class="ls">'+this.children[i].name+'</div>'
+		]
+	}
+	output.join('');
+}
+
+var currentDir = new Folder("encom_root", null,false);//"encom_root";
+
+var github= new Folder("github", currentDir,false);
+var test = new Folder("test", currentDir,false);
+var wikipedia = new Folder("wikipedia", currentDir,false);
+var bitcoin = new Folder("bitcoin", currentDir,false);
+
+currentDir.children = [github, test, wikipedia, bitcoin];
+
 
 function writePrompt(){
     $(".command-blinker").removeClass("blink").removeClass("command-blinker");
 
-    $("#lt-command-lines").append('<div class="command"><span class="prompt">encom-sh:' + currentDir + '$&nbsp;</span><span class="command-text"></span><span class="blink command-blinker">&nbsp;</span></div>');
+    $("#lt-command-lines").append('<div class="command"><span class="prompt">encom-sh:' + currentDir.name + '$&nbsp;</span><span class="command-text"></span><span class="blink command-blinker">&nbsp;</span></div>');
 }
 
 function writeLs(exec){
@@ -562,6 +588,68 @@ function writeLs(exec){
 
 function executeCommand(){
     var command = $(".command-text").last().text();
+    var args = this.value.split(' ').filter(function (val, i) {
+    	return val;
+    });
+    var command = args[0].toLowerCase();
+    args = args.splice(1);
+
+    switch (command) {
+    	case 'clear':
+    		break;
+    	case 'date':
+    		output = '<div class="ls">' + (new Date()).toLocaleString + '</div>'
+    		output.join('');
+    		$("#lt-command-lines").append(output);
+    		writePrompt()
+    		break;
+    	case 'whoami':
+    		output = '<div class="ls">' + "Clu" + '</div>'
+    		output.join('');
+    		$("#lt-command-lines").append(output);
+    		writePrompt()
+    		break;
+    	case 'touch':
+    		newfile = new Folder(args[0], currentDir,true)
+    		currentDir.children += newfile;
+    		writePrompt()
+    		break;
+    	case 'ls':
+    		currentDir.ls();
+    		writePrompt()
+    		return;
+    	case 'cd':
+    		if (args[0] == '..' && currentDir.parent != null) {
+    			currentDir = currentDir.parent;
+    		}
+    		if (currentDir.children.findindex(x => x.name == args[0])>=0) {
+    			currentDir = currentDir.children.findIndex(x => x.name == args[0]);
+    		}
+    		writePrompt()
+    		break;
+    	case 'mkdir':
+    		//add reserved words list
+    		if (args[0].length > 0) {
+    			newdir = new Folder(args[0], currentDir, false);
+    			currentDir.children += newdir;
+    		}
+    		writePrompt()
+    		break;
+    	case cp:
+    	case mv:
+    		var src = args[0];
+    		var dest = args[1];
+    		if (!src || !dest) {
+    			writeResponse("<span class='alert'>usage: </span>" + command + " source target");
+    			writePrompt();
+    			break;
+    		}
+
+    }
+    return;
+
+
+
 
     if(command == "run github.exe"){
         if(currentDir == "github"){
